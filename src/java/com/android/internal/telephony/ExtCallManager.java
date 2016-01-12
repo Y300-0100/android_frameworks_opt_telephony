@@ -334,6 +334,18 @@ public class ExtCallManager extends CallManager {
             case RINGING:
                 if (VDBG) Rlog.d(LOG_TAG, "setAudioMode RINGING");
                 int curAudioMode = mAudioManager.getMode();
+
+                // HACK: When Dual-SIM is enabled and call waiting occurs,
+                // com.android.phone.CallCommandService.setActiveSubscription
+                // will cause setAudioMode to be called, causing the audio
+                // mode to be chagned to "MODE_RINGTONE", rendering the active
+                // conversation to be inaudiable.
+                // (The setAudioMode() call does not occur without Dual-SIM.)
+                if (curAudioMode == AudioManager.MODE_IN_CALL) {
+                    Rlog.d(LOG_TAG, "Skip MODE_IN_CALL -> MODE_RINGTONE (assume call waiting)");
+                    return;
+                }
+
                 if (curAudioMode != AudioManager.MODE_RINGTONE) {
                     // only request audio focus if the ringtone is going to be heard
                     if (mAudioManager.getStreamVolume(AudioManager.STREAM_RING) > 0
